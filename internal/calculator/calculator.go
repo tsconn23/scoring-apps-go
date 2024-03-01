@@ -124,12 +124,18 @@ func (c *Calculator) score(ctx context.Context, key string) {
 		return
 	}
 
+	// See comments added to the NewScore method. The queries mentioned in those comments should happen outside of
+	// the NewScore method, probably here, with the results passed in via parameters.
 	docScore := documents.NewScore(key, annotations, c.policy)
 	err = c.dbClient.CreateDocument(ctx, docScore.Key.String(), docScore, documents.VertexScores)
 	if err != nil {
 		c.logger.Error(err.Error())
 		return
 	}
+
+	// Today this creates an edge from a score node to a data node at the "app" layer. If scoring the app layer,
+	// our current need is for an additional edge to the score at the cicd layer. And in the future, an edge to
+	// the OS/VM layer.
 	err = c.dbClient.CreateEdge(ctx, docScore.Key.String(), key, documents.EdgeScoring)
 	if err != nil {
 		c.logger.Error(err.Error())
